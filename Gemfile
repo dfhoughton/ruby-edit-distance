@@ -1,3 +1,4 @@
 source 'https://rubygems.org'
 
-gem 'virtus'
+# Specify your gem's dependencies in edit_distance.gemspec
+gemspec

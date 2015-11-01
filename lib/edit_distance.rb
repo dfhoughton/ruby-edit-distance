@@ -3,9 +3,9 @@ require "edit_distance/version"
 module EditDistance
 
   class Analyzer
-    include Virtus.model
-
-    attribute :scale, Scale
+    def initialize scale
+      @scale = scale
+    end
 
     # returns the edit distance from s1 to s2
     def distance s1, s2
@@ -14,16 +14,8 @@ module EditDistance
 
     # returns a Cell from which one can retrieve the optimal set of edits from s1 to s2
     def analyze s1, s2
-      Matrix.new( source: s1, destination: s2, scale: scale ).cell s1.length, s2.length
+      Matrix.new( s1, s2, @scale ).cell s1.length, s2.length
     end
-  end
-
-  # a set of constants
-  class Edit
-    SAME = Edit.new
-    INSERTION = Edit.new
-    DELETION = Edit.new
-    SUBSTITUTION = Edit.new
   end
 
   class Scale
@@ -32,18 +24,13 @@ module EditDistance
     end
   end
 
-  class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit )
-  end
+  class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit ); end
 
   class Matrix
-    include Virtus.model
-
-    attribute :source, String
-    attribute :destination, String
-    attribute :scale, Scale
-
-    def initialize *args
-      super
+    def initialize source, destination, scale
+      @source = source
+      @destination = destination
+      @scale = scale
       @matrix = []
       root = Cell.new source, destination, 0, 0, 0
       m0 = @matrix[0] = [ root ]
@@ -56,46 +43,46 @@ module EditDistance
       @matrix[s][d] ||= begin
         if s == 0
           p = cell s, d - 1
-          e = Edit::INSERTION
-          w = scale.weigh p, e, s, d
+          e = :insertion
+          w = @scale.weigh p, e, s, d
         elsif d == 0
           p = cell s - 1, d
-          e = Edit::DELETION
-          w = scale.weigh p, e, s, d
+          e = :deletion
+          w = @scale.weigh p, e, s, d
         else
           c3 = cell s - 1, d - 1
-          if source[s] == destination[d]
+          if @source[s] == @destination[d]
             p = c3
             w = c3.distance
             e = Edit::SAME
           else
             c1 = cell s - 1, d
             c2 = cell s, d - 1
-            w1 = scale.weigh c1, Edit::INSERTION, s, d
-            w2 = scale.weigh c2, Edit::DELETION, s, d
-            w3 = scale.weigh c3, Edit::SUBSTITUTION, s, d
+            w1 = @scale.weigh c1, :insertion, s, d
+            w2 = @scale.weigh c2, :deletion, s, d
+            w3 = @scale.weigh c3, :substitution, s, d
             if w1 < w3
               if w1 < w2
                 p = c1
                 w = w1
-                e = Edit::INSERTION
+                e = :insertion
               else
                 p = c2
                 w = w2
-                e = Edit::DELETION
+                e = :deletion
               end
             elsif w2 < w3
               p = c2
               w = w2
-              e = Edit::DELETION
+              e = :deletion
             else
               p = c3
               w = w3
-              e = Edit::SUBSTITUTION
+              e = :substitution
             end
           end
         end
-        Cell.new source, destination, s, d, w, p, e
+        Cell.new @source, @destination, s, d, w, p, e
       end
     end
   end
