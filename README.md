@@ -1,8 +1,10 @@
 # EditDistance
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/edit_distance`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+This is basically an implementation of the Levenshtein distance algorithm which lets you plug in your own cost calculations for
+insertions, deletions, and substitutions which can vary by context. You can use this, for example, to make vowel harmony
+rules, like `a -> ä` or `o -> ö` cheaper than other arbitrary substitutions, or to make suffix-related insertions and deletions cheaper
+than word-medial modifications. The end result should be that, for an algorithm tuned to English, for example, the distance from `cat`
+to `cats` would be short than that from `cat` to `chat`.
 
 ## Installation
 
