@@ -3,8 +3,19 @@ require "edit_distance/version"
 module EditDistance
 
   class Analyzer
-    def initialize scale
-      @scale = scale
+    def initialize proc=nil, &block
+      if proc
+        if Proc === proc
+          @scale = proc
+        else
+          @scale = -> (parent,edit,c,d) { proc.weigh parent, edit, c, d }
+        end
+      elsif given_block?
+        @scale = block
+      else
+        raise "no edit weighing algorithm provided"
+      end
+      raise "weighing algorithm expected to have arity of 4" unless block.arity == 4
     end
 
     # returns the edit distance from s1 to s2
@@ -24,7 +35,10 @@ module EditDistance
     end
   end
 
-  class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit ); end
+  class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit )
+    def describe
+    end
+  end
 
   class Matrix
     def initialize source, destination, scale
@@ -43,11 +57,11 @@ module EditDistance
       @matrix[s][d] ||= begin
         if s == 0
           p = cell s, d - 1
-          e = :insertion
+          e = :deletion
           w = @scale.weigh p, e, s, d
         elsif d == 0
           p = cell s - 1, d
-          e = :deletion
+          e = :insertion
           w = @scale.weigh p, e, s, d
         else
           c3 = cell s - 1, d - 1
@@ -58,23 +72,23 @@ module EditDistance
           else
             c1 = cell s - 1, d
             c2 = cell s, d - 1
-            w1 = @scale.weigh c1, :insertion, s, d
-            w2 = @scale.weigh c2, :deletion, s, d
+            w1 = @scale.weigh c1, :deletion, s, d
+            w2 = @scale.weigh c2, :insertion, s, d
             w3 = @scale.weigh c3, :substitution, s, d
             if w1 < w3
               if w1 < w2
                 p = c1
                 w = w1
-                e = :insertion
+                e = :deletion
               else
                 p = c2
                 w = w2
-                e = :deletion
+                e = :insertion
               end
             elsif w2 < w3
               p = c2
               w = w2
-              e = :deletion
+              e = :insertion
             else
               p = c3
               w = w3
