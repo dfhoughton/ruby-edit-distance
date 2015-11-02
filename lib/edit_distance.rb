@@ -29,6 +29,7 @@ module EditDistance
       Matrix.new( s1, s2, @scale ).cell s1.length, s2.length
     end
 
+    # returns a description of the sequence of edits as a list of strings
     def explain s1, s2
       cell = analyze s1, s2
       sequence = [ cell ]
@@ -44,6 +45,11 @@ module EditDistance
     def root?
       parent.nil?
     end
+
+    # the cost of the edit represented by this cell
+    def cost
+      @cost ||= distance - parent.distance unless root?
+    end
     
     # characters under consideration
     def chars
@@ -57,12 +63,13 @@ module EditDistance
     # a description of the edit represented
     def describe
       c1, c2 = chars
-      case edit
+      d = case edit
       when :same         then "kept #{c1}"
       when :insertion    then "inserted #{c2}"
       when :deletion     then "deleted #{c1}"
       when :substitution then "substituted #{c2} for #{c1}"
       end
+      d + " (#{cost})"
     end
   end
 
@@ -72,7 +79,7 @@ module EditDistance
       @destination = destination
       @scale = scale
       @matrix = []
-      root = Cell.new source, destination, 0, 0, 0
+      root = Cell.new source, destination, 0, 0, 0.0
       m0 = @matrix[0] = [ root ]
       source.length.times do |i|
         @matrix << []
