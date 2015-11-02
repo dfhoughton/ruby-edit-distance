@@ -42,6 +42,7 @@ module EditDistance
 
   class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit )
 
+    # is this the pre-edit cell?
     def root?
       parent.nil?
     end
@@ -133,5 +134,11 @@ module EditDistance
         Cell.new @source, @destination, s, d, w, p, e
       end
     end
+  end
+
+  module_function
+
+  def levenshtein
+    Analyzer.new -> (_,_,_,_) {1}
   end
 end
