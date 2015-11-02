@@ -8,7 +8,7 @@ module EditDistance
         if Proc === proc
           @scale = proc
         else
-          @scale = -> (parent,edit,c,d) { proc.weigh parent, edit, c, d }
+          @scale = -> ( parent, edit, s, d ) { proc.weigh parent, edit, s, d }
         end
       elsif given_block?
         @scale = block
@@ -26,12 +26,6 @@ module EditDistance
     # returns a Cell from which one can retrieve the optimal set of edits from s1 to s2
     def analyze s1, s2
       Matrix.new( s1, s2, @scale ).cell s1.length, s2.length
-    end
-  end
-
-  class Scale
-    def weigh parent, edit, s, d
-      raise NotImplementedError
     end
   end
 
@@ -58,23 +52,24 @@ module EditDistance
         if s == 0
           p = cell s, d - 1
           e = :deletion
-          w = @scale.weigh p, e, s, d
+          w = p.distance + @scale.call p, e, s, d
         elsif d == 0
           p = cell s - 1, d
-          e = :insertion
-          w = @scale.weigh p, e, s, d
+          e = :call
+          w = p.distance + @scale.weigh p, e, s, d
         else
-          c3 = cell s - 1, d - 1
-          if @source[s] == @destination[d]
+          s1 = s - 1; d1 = d - 1
+          c3 = cell s1, d1
+          if @source[s1] == @destination[d1]
             p = c3
             w = c3.distance
             e = Edit::SAME
           else
-            c1 = cell s - 1, d
-            c2 = cell s, d - 1
-            w1 = @scale.weigh c1, :deletion, s, d
-            w2 = @scale.weigh c2, :insertion, s, d
-            w3 = @scale.weigh c3, :substitution, s, d
+            c1 = cell s1, d
+            c2 = cell s, d1
+            w1 = c1.distance + @scale.call c1, :deletion, s, d
+            w2 = c2.distance + @scale.call c2, :insertion, s, d
+            w3 = c3.distance + @scale.call c3, :substitution, s, d
             if w1 < w3
               if w1 < w2
                 p = c1
