@@ -2,6 +2,8 @@ require "edit_distance/version"
 
 module EditDistance
 
+  class Error < StandardError; end
+
   class Analyzer
     def initialize proc=nil, &block
       if proc
@@ -11,12 +13,12 @@ module EditDistance
           raise "weigh method expected" unless proc.respond_to?(:weigh)
           @scale = -> ( parent, edit, s, d ) { proc.weigh parent, edit, s, d }
         end
-      elsif given_block?
+      elsif block_given?
         @scale = block
       else
-        raise "no edit weighing algorithm provided"
+        raise Error.new "no edit weighing algorithm provided"
       end
-      raise "weighing algorithm expected to have arity of 4" unless @scale.arity == 4
+      raise Error.new "weighing algorithm expected to have arity of 4" unless @scale.arity == 4
     end
 
     # returns the edit distance from s1 to s2
@@ -26,20 +28,21 @@ module EditDistance
 
     # returns a Cell from which one can retrieve the optimal set of edits from s1 to s2
     def analyze s1, s2
-      Matrix.new( s1, s2, @scale ).cell s1.length, s2.length
+      matrix( s1, s2 ).cell s1.length, s2.length
+    end
+
+    # produces the table used to calculate edit distances
+    def table s1, s2
+      Matrix.new( s1, s2, @scale )
     end
 
     # returns a description of the sequence of edits as a list of strings
     def explain s1, s2
-      cell = analyze s1, s2
-      sequence = [ cell ]
-      while !( cell = cell.parent ).root?
-        sequence.unshift cell
-      end
-      sequence.map(&:describe)
+      analyze( s1, s2 ).explain
     end
   end
 
+  # element of a Matrix
   class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit )
 
     # is this the pre-edit cell?
@@ -72,14 +75,28 @@ module EditDistance
       end
       d + " (#{cost})"
     end
+
+    # explain all the edits up to and including the edit in the current cell
+    def explain
+      cell = self
+      sequence = [ cell ]
+      while !( cell = cell.parent ).root?
+        sequence.unshift cell
+      end
+      sequence.map(&:describe)
+    end
+
   end
 
+  # one-use scratchpad
   class Matrix
     def initialize source, destination, scale
       @source = source
       @destination = destination
       @scale = scale
       @matrix = []
+      @s_dim = source.length
+      @d_dim = destination.length
       root = Cell.new source, destination, 0, 0, 0.0
       m0 = @matrix[0] = [ root ]
       source.length.times do |i|
@@ -88,6 +105,7 @@ module EditDistance
     end
 
     def cell s, d
+      raise Error.new "dimensions of table are #{@s_dim} x #{@d_dim}" if s < 0 || d < 0 || s > @s_dim || d > @d_dim
       @matrix[s][d] ||= begin
         if s == 0
           p = cell s, d - 1
@@ -138,7 +156,13 @@ module EditDistance
 
   module_function
 
+  # levenshtein distance analyzer
   def levenshtein
     Analyzer.new -> (_,_,_,_) {1}
+  end
+
+  # abbreviated levenshtein
+  def lev
+    levenshtein
   end
 end
