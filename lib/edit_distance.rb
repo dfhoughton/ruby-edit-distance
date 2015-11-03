@@ -11,6 +11,7 @@ module EditDistance
           @scale = proc
         else
           raise "weigh method expected" unless proc.respond_to?(:weigh)
+          raise Error.new "weighing algorithm expected to have arity of 4" unless proc.method(:weigh).arity == 4
           @scale = -> ( parent, edit, s, d ) { proc.weigh parent, edit, s, d }
         end
       elsif block_given?
