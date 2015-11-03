@@ -28,7 +28,7 @@ module EditDistance
 
     # returns a Cell from which one can retrieve the optimal set of edits from s1 to s2
     def analyze s1, s2
-      matrix( s1, s2 ).cell s1.length, s2.length
+      table( s1, s2 ).cell s1.length, s2.length
     end
 
     # produces the table used to calculate edit distances
@@ -43,7 +43,7 @@ module EditDistance
   end
 
   # element of a Matrix
-  class Cell < Struct.new( :source, :destination, :s, :d, :distance, :parent, :edit )
+  class Cell < Struct.new( :matrix, :source, :destination, :s, :d, :distance, :parent, :edit )
 
     # is this the pre-edit cell?
     def root?
@@ -86,22 +86,42 @@ module EditDistance
       sequence.map(&:describe)
     end
 
+    # a handle on the matrix list for stashing listable stuff
+    def list
+      @matrix.list
+    end
+
+    # a handle on the matrix hash for stashing mappable stuff
+    def hash
+      @matrix.hash
+    end
+
   end
 
   # one-use scratchpad
   class Matrix
     def initialize source, destination, scale
-      @source = source
+      @source      = source
       @destination = destination
-      @scale = scale
-      @matrix = []
-      @s_dim = source.length
-      @d_dim = destination.length
-      root = Cell.new source, destination, 0, 0, 0.0
-      m0 = @matrix[0] = [ root ]
+      @scale       = scale
+      @matrix      = []
+      @list        = []
+      @hash        = {}
+      @s_dim       = source.length
+      @d_dim       = destination.length
+      root = Cell.new self, source, destination, 0, 0, 0.0
+      @matrix[0] = [ root ]
       source.length.times do |i|
         @matrix << []
       end
+    end
+
+    def list
+      @list
+    end
+
+    def hash
+      @hash
     end
 
     def cell s, d
@@ -149,7 +169,7 @@ module EditDistance
             end
           end
         end
-        Cell.new @source, @destination, s, d, w, p, e
+        Cell.new @matrix, @source, @destination, s, d, w, p, e
       end
     end
   end
