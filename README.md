@@ -39,7 +39,7 @@ class TwiceAsGood < EditDistance::Scale
   end
 end
 
-tag = EditDistance.analyzer TwideAsGood
+tag = EditDistance.analyzer TwiceAsGood
 
 tag.distance 'cat', 'cats'   # 2.0
 ```
