@@ -41,26 +41,14 @@ class EditDistanceTest < Minitest::Test
     assert_equal edify('substitution substitution substitution'), EditDistance.lev.edits('cat', 'dog')
   end
 
-  def test_lambda_constructor
-    ed = EditDistance::Analyzer.new -> (_,_,_,_) {1}
-    assert_equal 1.0, ed.distance( 'cat', 'cats' )
-  end
-
-  def test_block_constructor
-    ed = EditDistance::Analyzer.new do |_,_,_,_|
-      1
-    end
-    assert_equal 1.0, ed.distance( 'cat', 'cats' )
-  end
-
-  class ED
-    def self.weigh a,b,c,d
-      1
+  class ED < EditDistance::Scale
+    def weigh a,b,c,d
+      2
     end
   end
 
   def test_class_constructor
-    ed = EditDistance::Analyzer.new ED
-    assert_equal 1.0, ed.distance( 'cat', 'cats' )
+    ed = EditDistance.analyzer ED
+    assert_equal 2.0, ed.distance( 'cat', 'cats' )
   end
 end

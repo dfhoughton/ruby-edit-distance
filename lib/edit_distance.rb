@@ -5,21 +5,9 @@ module EditDistance
   class Error < StandardError; end
 
   class Analyzer
-    def initialize proc=nil, &block
-      if proc
-        if Proc === proc
-          @scale = proc
-        else
-          raise "weigh method expected" unless proc.respond_to?(:weigh)
-          raise Error.new "weigh method expected to have arity of 4" unless proc.method(:weigh).arity == 4
-          @scale = -> ( parent, edit, s, d ) { proc.weigh parent, edit, s, d }
-        end
-      elsif block_given?
-        @scale = block
-      else
-        raise Error.new "no edit weighing algorithm provided"
-      end
-      raise Error.new "weighing algorithm expected to have arity of 4" unless @scale.arity == 4
+    def initialize scale
+      raise Error.new "initialization parameter must be a Scale" unless Scale === scale
+      @scale = scale
     end
 
     # returns the edit distance from s1 to s2
@@ -51,6 +39,16 @@ module EditDistance
     # returns a description of the sequence of edits as a list of strings
     def explain s1, s2
       analyze( s1, s2 ).explain
+    end
+  end
+
+  # home of edit distance algorithm
+  class Scale
+    def weigh parent, edit, source_offset, destination_offset
+      1
+    end
+
+    def prepare matrix
     end
   end
 
@@ -166,7 +164,7 @@ module EditDistance
       @s_dim       = source.length
       @d_dim       = destination.length
       root = Cell.new self, source, destination, 0, 0, 0.0
-      scale.prepare self if scale.respond_to? :prepare
+      scale.prepare self
       @matrix[0] = [ root ]
       source.length.times do |i|
         @matrix << []
@@ -179,11 +177,11 @@ module EditDistance
         if s == 0
           p = cell s, d - 1
           e = :deletion
-          w = p.distance + @scale.call( p, e, s, d )
+          w = p.distance + @scale.weigh( p, e, s, d )
         elsif d == 0
           p = cell s - 1, d
           e = :call
-          w = p.distance + @scale.call( p, e, s, d )
+          w = p.distance + @scale.weigh( p, e, s, d )
         else
           s1 = s - 1; d1 = d - 1
           c3 = cell s1, d1
@@ -194,9 +192,9 @@ module EditDistance
           else
             c1 = cell s1, d
             c2 = cell s, d1
-            w1 = c1.distance + @scale.call( c1, :deletion, s, d )
-            w2 = c2.distance + @scale.call( c2, :insertion, s, d )
-            w3 = c3.distance + @scale.call( c3, :substitution, s, d )
+            w1 = c1.distance + @scale.weigh( c1, :deletion, s, d )
+            w2 = c2.distance + @scale.weigh( c2, :insertion, s, d )
+            w3 = c3.distance + @scale.weigh( c3, :substitution, s, d )
             if w1 < w3
               if w1 < w2
                 p = c1
@@ -225,9 +223,17 @@ module EditDistance
 
   module_function
 
+  def analyzer alg
+    if Class === alg
+      Analyzer.new alg.new
+    else
+      Analyzer.new alg
+    end
+  end
+
   # levenshtein distance analyzer
   def levenshtein
-    Analyzer.new -> (_,_,_,_) {1}
+    Analyzer.new Scale.new
   end
 
   # abbreviated levenshtein
