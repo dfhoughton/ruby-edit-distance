@@ -33,7 +33,8 @@ lev.edits 'cat', 'cats'      # [ :same, :same, :same, :insertion ]
 lev.explain 'cat', 'cats'    # [ "kept c (0.0)", "kept a (0.0)", "kept t (0.0)", "inserted s (1.0)" ]
 
 # a new algorithm, identical to Levenshtein except all costs are 2
-# one can also pass in a lambda or Proc or an object with a weigh method with the same signature
+# one can also pass in a lambda or Proc or an object with a weigh
+# method with the same signature
 foo = EditDistance::Analyzer.new do |cell, edit, source, destination|
   2
 end
