@@ -5,7 +5,39 @@ class EditDistanceTest < Minitest::Test
     refute_nil ::EditDistance::VERSION
   end
 
-  def test_it_does_something_useful
-    assert false
+  def edify s
+    s.strip.split(/\s+/).map(&:to_sym)
+  end
+
+  def test_lev_cat_cat
+    assert_equal 0, EditDistance.lev.distance('cat','cat')
+  end
+
+  def test_lev_cat_cat_edits
+    assert_equal edify('same same same'), EditDistance.lev.edits('cat','cat')
+  end
+
+  def test_lev_cat_cats
+    assert_equal 1, EditDistance.lev.distance('cat', 'cats')
+  end
+
+  def test_lev_cat_cats_edits
+    assert_equal edify('same same same insertion'), EditDistance.lev.edits('cat', 'cats')
+  end
+
+  def test_lev_cat_chat
+    assert_equal 1, EditDistance.lev.distance('cat', 'chat')
+  end
+
+  def test_lev_cat_chat_edits
+    assert_equal edify('same insertion same same'), EditDistance.lev.edits('cat', 'chat')
+  end
+
+  def test_lev_cat_dog
+    assert_equal 3, EditDistance.lev.distance('cat', 'dog')
+  end
+
+  def test_lev_cat_dog_edits
+    assert_equal edify('substitution substitution substitution'), EditDistance.lev.edits('cat', 'dog')
   end
 end

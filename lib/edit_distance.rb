@@ -32,6 +32,17 @@ module EditDistance
       table( s1, s2 ).cell s1.length, s2.length
     end
 
+    # list edits from s1 to s2, where edits are in {:same, :insertion, :deletion, :substitution}
+    def edits s1, s2
+      c = analyze s1, s2
+      edits = []
+      while !c.root?
+        edits << c.edit
+        c = c.parent
+      end
+      edits.reverse
+    end
+
     # produces the table used to calculate edit distances
     def table s1, s2
       Matrix.new( s1, s2, @scale )
