@@ -110,11 +110,55 @@ module EditDistance
 
   end
 
+  # essentially a string wrapper whose [] method provides access to Char instances
+  # rather than single character substrings; it to_s method provides the original string
+  class CharSeq
+    def initialize s
+      @s     = s
+      @chars = []
+      (0...s.length).to_a.each do |i|
+        @chars[i] = Char.new s[i], i, s.length - i - 1
+      end
+    end
+
+    def to_s
+      @s
+    end
+
+    def [] n
+      @chars[n]
+    end
+  end
+
+  # basically a character instrumented to provide list and hash accessors for metadata
+  # and pre and post accessor for the distance of the character from the beginning and end of its string
+  class Char
+    attr_reader :c, :list, :hash, :pre, :post
+
+    def initialize c, pre, post
+      @c    = c
+      @pre  = pre
+      @post = post
+      @list = []
+      @hash = {}
+    end
+
+    def to_s
+      @c
+    end
+
+    def == other
+      @c == other.c
+    end
+  end
+
   # one-use scratchpad
   class Matrix
+    attr_reader :source, :destination, :list, :hash
+
     def initialize source, destination, scale
-      @source      = source
-      @destination = destination
+      @source      = CharSeq.new source
+      @destination = CharSeq.new destination
       @scale       = scale
       @matrix      = []
       @list        = []
@@ -122,18 +166,11 @@ module EditDistance
       @s_dim       = source.length
       @d_dim       = destination.length
       root = Cell.new self, source, destination, 0, 0, 0.0
+      scale.prepare self if scale.respond_to? :prepare
       @matrix[0] = [ root ]
       source.length.times do |i|
         @matrix << []
       end
-    end
-
-    def list
-      @list
-    end
-
-    def hash
-      @hash
     end
 
     def cell s, d
@@ -150,7 +187,7 @@ module EditDistance
         else
           s1 = s - 1; d1 = d - 1
           c3 = cell s1, d1
-          if @source[s1] == @destination[d1]
+          if source[s1] == destination[d1]
             p = c3
             w = c3.distance
             e = :same
