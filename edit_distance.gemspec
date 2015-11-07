@@ -9,9 +9,14 @@ Gem::Specification.new do |spec|
   spec.authors       = ["dfhoughton"]
   spec.email         = ["dfhoughton@gmail.com"]
 
-  spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.summary       = %q{Pluggable edit distance framework based on Levenshtein algorithm.}
+  spec.description   = <<-END
+                        EditDistance provides the framework to write insertion/deletion/substitution-based edit
+                        distance algorithms backed by the Levenshtein edit distance dynamic programming framework.
+                        In addition to a distance metric, it can provide a description of the sequence of edits a
+                        particular distance corresponds to.
+                        END
+  spec.homepage      = "https://github.com/dfhoughton/ruby-edit-distance"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
@@ -29,5 +34,5 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler", "~> 1.10"
   spec.add_development_dependency "rake", "~> 10.0"
-  spec.add_development_dependency "minitest"
+  spec.add_development_dependency "minitest", "~> 5"
 end
