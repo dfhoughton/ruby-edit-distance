@@ -22,6 +22,25 @@ Or install it yourself as:
 
     $ gem install edit_distance
 
+## Synopsis
+
+```ruby
+require 'edit_distance'
+
+lev = EditDistance.lev       # convenience method to use Levenshtein distance, EditDistance.levenshtein also works
+lev.distance 'cat', 'cats'   # 1.0
+lev.edits 'cat', 'cats'      # [ :same, :same, :same, :insertion ]
+lev.explain 'cat', 'cats'    # [ "kept c (0.0)", "kept a (0.0)", "kept t (0.0)", "inserted s (1.0)" ]
+
+# a new algorithm, identical to Levenshtein except all costs are 2
+# one can also pass in a lambda or Proc or an object with a weigh method with the same signature
+foo = EditDistance::Analyzer.new do |cell, edit, source, destination|
+  2
+end
+
+foo.distance 'cat', 'cats'   # 2.0
+```
+
 ## Usage
 
 TODO: Write usage instructions here
