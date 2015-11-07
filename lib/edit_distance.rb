@@ -105,7 +105,6 @@ module EditDistance
     def hash
       @matrix.hash
     end
-
   end
 
   # essentially a string wrapper whose [] method provides access to Char instances
@@ -163,57 +162,73 @@ module EditDistance
       @hash        = {}
       @s_dim       = source.length
       @d_dim       = destination.length
+      @matrix      = Array.new @s_dim
+      (0..@s_dim).each do |i|
+        @matrix[i] = Array.new @d_dim + 1
+      end
       root = Cell.new self, source, destination, 0, 0, 0.0
-      scale.prepare self
-      @matrix[0] = [ root ]
-      source.length.times do |i|
-        @matrix << []
+      @matrix[0][0] = root
+      @scale.prepare self
+      # fill all-insertion and all-deletion cells
+      (1..@s_dim).each do |i|
+        p = @matrix[i-1][0]
+        e = :insertion
+        w = p.distance + @scale.weigh( p, e, i, 0 )
+        @matrix[i][0] = Cell.new self, @source, @destination, i, 0, w, p, e
+      end
+      (1..@d_dim).each do |i|
+        p = @matrix[0][i-1]
+        e = :deletion
+        w = p.distance + @scale.weigh( p, e, 0, i )
+        @matrix[0][i] = Cell.new self, @source, @destination, 0, i, w, p, e
+      end
+      # fill matrix
+      (1..@s_dim).each do |s|
+        (1..@d_dim).each do |d|
+          c s, d
+        end
       end
     end
 
     def cell s, d
-      raise Error.new "dimensions of table are #{@s_dim} x #{@d_dim}" if s < 0 || d < 0 || s > @s_dim || d > @d_dim
-      @matrix[s][d] ||= begin
-        if s == 0
-          p = cell s, d - 1
-          e = :deletion
-          w = p.distance + @scale.weigh( p, e, s, d )
-        elsif d == 0
-          p = cell s - 1, d
-          e = :call
-          w = p.distance + @scale.weigh( p, e, s, d )
+      raise Error.new "dimensions of table are #{@s_dim} x #{@d_dim}" if s < 1 || d < 1 || s > @s_dim || d > @d_dim
+      @matrix[s][d]
+    end
+
+    protected
+
+    def c s, d
+      @matrix[s][d] = begin
+        s1 = s - 1; d1 = d - 1
+        c3 = @matrix[s1][d1]
+        if source[s1] == destination[d1]
+          p = c3
+          w = c3.distance
+          e = :same
         else
-          s1 = s - 1; d1 = d - 1
-          c3 = cell s1, d1
-          if source[s1] == destination[d1]
-            p = c3
-            w = c3.distance
-            e = :same
-          else
-            c1 = cell s1, d
-            c2 = cell s, d1
-            w1 = c1.distance + @scale.weigh( c1, :deletion, s, d )
-            w2 = c2.distance + @scale.weigh( c2, :insertion, s, d )
-            w3 = c3.distance + @scale.weigh( c3, :substitution, s, d )
-            if w1 < w3
-              if w1 < w2
-                p = c1
-                w = w1
-                e = :deletion
-              else
-                p = c2
-                w = w2
-                e = :insertion
-              end
-            elsif w2 < w3
+          c1 = @matrix[s1][d]
+          c2 = @matrix[s][d1]
+          w1 = c1.distance + @scale.weigh( c1, :deletion, s, d )
+          w2 = c2.distance + @scale.weigh( c2, :insertion, s, d )
+          w3 = c3.distance + @scale.weigh( c3, :substitution, s, d )
+          if w1 < w3
+            if w1 < w2
+              p = c1
+              w = w1
+              e = :deletion
+            else
               p = c2
               w = w2
               e = :insertion
-            else
-              p = c3
-              w = w3
-              e = :substitution
             end
+          elsif w2 < w3
+            p = c2
+            w = w2
+            e = :insertion
+          else
+            p = c3
+            w = w3
+            e = :substitution
           end
         end
         Cell.new @matrix, @source, @destination, s, d, w, p, e
