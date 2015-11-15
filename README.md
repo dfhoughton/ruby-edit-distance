@@ -32,21 +32,80 @@ lev.distance 'cat', 'cats'   # 1.0
 lev.edits 'cat', 'cats'      # [ :same, :same, :same, :insertion ]
 lev.explain 'cat', 'cats'    # [ "kept c (0.0)", "kept a (0.0)", "kept t (0.0)", "inserted s (1.0)" ]
 
-# a new algorithm, identical to Levenshtein except all costs are 2
-class TwiceAsGood < EditDistance::Scale
-  def weigh( cell, edit, source_offset, destination_offset )
-    2
+# make edits to the last three characters of a word much cheaper
+class SimpleSuffixAlgorithm < EditDistance::Scale
+  def suffixy? word, i
+    true if ( c = word[i-1] ) && c.back? && c.post < 4   # c is in latter characters of words and in the last 3 characters
+  end
+
+  def weigh parent, edit, s, d
+    if edit == :deletion && suffixy?( parent.source, s )
+      0.25
+    elsif edit == :insertion && suffixy?( parent.destination, d )
+      0.25
+    elsif edit == :substitution && suffixy?( parent.source, s ) && suffixy?( parent.destination, d )
+      0.25
+    else
+      1
+    end
   end
 end
 
-tag = EditDistance.analyzer TwiceAsGood
+ssa = EditDistance.analyzer SimpleSuffixAlgorithm
 
-tag.distance 'cat', 'cats'   # 2.0
+ssa.distance 'cat', 'cats'   # 0.25
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+All the `EditDistance` code lives in the `EditDistance` namespace and consists of several module functions and classes.
+These are listed below roughly in order of frequency of use.
+
+### Module functions
+
+#### `lev`, `levenshtein`
+
+#### `analyzer`
+
+### Classes
+
+#### `EditDistance::Analyzer`
+
+##### `distance`
+
+##### `edits`
+
+##### `explain`
+
+##### `table`
+
+##### `analyze`
+
+##### `chain`
+
+#### `EditDistance::Scale`
+
+##### `weigh`
+
+##### `prepare`
+
+#### `EditDistance::Matrix`
+
+##### `list`
+
+##### `hash`
+
+#### `EditDistance::CharSequence`
+
+##### `list`
+
+##### `hash`
+
+#### `EditDistance::Char`
+
+#### `EditDistance::Cell`
+
+#### `EditDistance::Error`
 
 ## Development
 
