@@ -106,7 +106,10 @@ module EditDistance
     end
 
     def inspect
-      "<#{chars.inspect}, #{s} -> #{d}, #{edit}, (#{cost})#{ ' *' if matrix.final_cell && matrix.final_cell.path.include?(self)}>"
+      "<#{chars.inspect}, #{s} -> #{d}, #{edit}, (#{cost})" + 
+      %Q{#{ " #{@hash.inspect}" unless @hash.empty?}} +
+      %Q{#{ " #{@list.inspect}" unless @list.empty?}} +
+      "#{ ' *' if matrix.final_cell && matrix.final_cell.path.include?(self)}>"
     end
 
     # explain all the edits up to and including the edit in the current cell
@@ -158,6 +161,16 @@ module EditDistance
       @post = post
       @list = []
       @hash = {}
+    end
+
+    # is the character towards the front of its word?
+    def front?
+      @pre < @post
+    end
+
+    # is the character towards the back of its word?
+    def back?
+      @post < @pre
     end
 
     def to_s
@@ -220,7 +233,10 @@ module EditDistance
     end
 
     def inspect
-      %Q{#{source} -> #{destination}: [\n#{@matrix.map(&:inspect).map{|i| "  #{i}"}.join ",\n"}\n]}
+      %Q{#{source} -> #{destination}: } + 
+      %Q{#{ "\n  #{@hash.inspect}\n" unless @hash.empty?}} +
+      %Q{#{ "\n  #{@list.inspect}\n" unless @list.empty?}} +
+      %Q{[\n#{@matrix.map(&:inspect).map{|i| "  #{i}"}.join ",\n"}\n]}
     end
 
     def cell s, d
