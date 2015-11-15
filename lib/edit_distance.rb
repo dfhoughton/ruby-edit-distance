@@ -1,4 +1,5 @@
 require "edit_distance/version"
+require 'pry'
 
 module EditDistance
 
@@ -17,18 +18,25 @@ module EditDistance
 
     # returns a Cell from which one can retrieve the optimal set of edits from s1 to s2
     def analyze s1, s2
-      table( s1, s2 ).cell s1.length, s2.length
+      table( s1, s2 ).final_cell
     end
 
     # list edits from s1 to s2, where edits are in {:same, :insertion, :deletion, :substitution}
     def edits s1, s2
-      c = analyze s1, s2
-      edits = []
+      chain( s1, s2 ).map(&:edit)
+    end
+
+    # list table cells in optimal edit sequence
+    def chain s1, s2, include_root=false
+      t = table s1, s2
+      c = t.final_cell
+      chain = []
       while !c.root?
-        edits << c.edit
+        chain << c
         c = c.parent
       end
-      edits.reverse
+      chain << t.root if include_root
+      chain.reverse
     end
 
     # produces the table used to calculate edit distances
@@ -74,6 +82,17 @@ module EditDistance
       end
     end
 
+    # the optimal edit path from the root to this cell
+    def path
+      @path ||= [].tap do |path|
+        path << ( c = self )
+        while c = c.parent
+          path << c
+        end
+        path.reverse
+      end
+    end
+
     # a description of the edit represented
     def describe
       c1, c2 = chars
@@ -84,6 +103,10 @@ module EditDistance
       when :substitution then "substituted #{c2} for #{c1}"
       end
       d + " (#{cost})"
+    end
+
+    def inspect
+      "<#{chars.inspect}, #{s} -> #{d}, #{edit}, (#{cost})#{ ' *' if matrix.final_cell && matrix.final_cell.path.include?(self)}>"
     end
 
     # explain all the edits up to and including the edit in the current cell
@@ -112,10 +135,7 @@ module EditDistance
   class CharSeq
     def initialize s
       @s     = s
-      @chars = []
-      (0...s.length).to_a.each do |i|
-        @chars[i] = Char.new s[i], i, s.length - i - 1
-      end
+      @chars = (0...s.length).map{ |i| Char.new s[i], i, s.length - i - 1 }
     end
 
     def to_s
@@ -147,11 +167,16 @@ module EditDistance
     def == other
       @c == other.c
     end
+
+    def inspect
+      @c
+    end
+
   end
 
   # one-use scratchpad
   class Matrix
-    attr_reader :source, :destination, :list, :hash
+    attr_reader :source, :destination, :list, :hash, :root
 
     def initialize source, destination, scale
       @source      = CharSeq.new source
@@ -166,19 +191,19 @@ module EditDistance
       (0..@s_dim).each do |i|
         @matrix[i] = Array.new @d_dim + 1
       end
-      root = Cell.new self, source, destination, 0, 0, 0.0
+      @root = Cell.new self, @source, @destination, 0, 0, 0.0
       @matrix[0][0] = root
       @scale.prepare self
       # fill all-insertion and all-deletion cells
       (1..@s_dim).each do |i|
         p = @matrix[i-1][0]
-        e = :insertion
+        e = :deletion
         w = p.distance + @scale.weigh( p, e, i, 0 )
         @matrix[i][0] = Cell.new self, @source, @destination, i, 0, w, p, e
       end
       (1..@d_dim).each do |i|
         p = @matrix[0][i-1]
-        e = :deletion
+        e = :insertion
         w = p.distance + @scale.weigh( p, e, 0, i )
         @matrix[0][i] = Cell.new self, @source, @destination, 0, i, w, p, e
       end
@@ -188,6 +213,14 @@ module EditDistance
           c s, d
         end
       end
+    end
+
+    def final_cell
+      @matrix[@s_dim][@d_dim]
+    end
+
+    def inspect
+      %Q{#{source} -> #{destination}: [\n#{@matrix.map(&:inspect).map{|i| "  #{i}"}.join ",\n"}\n]}
     end
 
     def cell s, d
@@ -231,7 +264,7 @@ module EditDistance
             e = :substitution
           end
         end
-        Cell.new @matrix, @source, @destination, s, d, w, p, e
+        Cell.new self, @source, @destination, s, d, w, p, e
       end
     end
   end
