@@ -105,6 +105,27 @@ These are listed below roughly in order of frequency of use.
 
 #### `EditDistance::Cell`
 
+##### `matrix`, `source`, `destination`, `s`, `d`, `distance`, `parent`, `edit`
+
+##### `root?`
+
+##### `chars`
+
+##### `cost`
+
+##### `path`
+
+##### `describe`
+
+##### `explain`
+
+##### `list`
+
+##### `hash`
+
+These are accessors for various attributes of the cell: its parent matrix, the source and destination `EditDistance::CharSequence` objects, the cell's source
+and destination indices in the matrix, it's accumulated edit distance, the cell which is its parent in the edit path, and a symbol identifying the cell's edit.
+
 #### `EditDistance::Error`
 
 ## Development

@@ -72,7 +72,7 @@ module EditDistance
     def cost
       @cost ||= distance - parent.distance unless root?
     end
-    
+
     # characters under consideration
     def chars
       @chars ||= begin
@@ -106,7 +106,7 @@ module EditDistance
     end
 
     def inspect
-      "<#{chars.inspect}, #{s} -> #{d}, #{edit}, (#{cost})" + 
+      "<#{chars.inspect}, #{s} -> #{d}, #{edit}, (#{cost})" +
       %Q{#{ " #{@hash.inspect}" unless @hash.empty?}} +
       %Q{#{ " #{@list.inspect}" unless @list.empty?}} +
       "#{ ' *' if matrix.final_cell && matrix.final_cell.path.include?(self)}>"
@@ -195,12 +195,11 @@ module EditDistance
       @source      = CharSeq.new source
       @destination = CharSeq.new destination
       @scale       = scale
-      @matrix      = []
       @list        = []
       @hash        = {}
       @s_dim       = source.length
       @d_dim       = destination.length
-      @matrix      = Array.new @s_dim
+      @matrix      = Array.new @s_dim + 1
       (0..@s_dim).each do |i|
         @matrix[i] = Array.new @d_dim + 1
       end
@@ -233,7 +232,7 @@ module EditDistance
     end
 
     def inspect
-      %Q{#{source} -> #{destination}: } + 
+      %Q{#{source} -> #{destination}: } +
       %Q{#{ "\n  #{@hash.inspect}\n" unless @hash.empty?}} +
       %Q{#{ "\n  #{@list.inspect}\n" unless @list.empty?}} +
       %Q{[\n#{@matrix.map(&:inspect).map{|i| "  #{i}"}.join ",\n"}\n]}

@@ -37,6 +37,18 @@ class EditDistanceTest < Minitest::Test
     assert_equal 3, EditDistance.lev.distance('cat', 'dog')
   end
 
+  def test_lev_empty_empty
+    assert_equal 0, EditDistance.lev.distance('', '')
+  end
+
+  def test_lev_cat_empty
+    assert_equal 3, EditDistance.lev.distance('cat', '')
+  end
+
+  def test_lev_empty_cat
+    assert_equal 3, EditDistance.lev.distance('', 'cat')
+  end
+
   def test_lev_cat_dog_edits
     assert_equal edify('substitution substitution substitution'), EditDistance.lev.edits('cat', 'dog')
   end
